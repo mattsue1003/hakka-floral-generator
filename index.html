@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大花布紙本生成器</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js"></script>
+<style>
+:root{--orange:#E8552D;--amber:#F4A93C;--teal:#028090;--ink:#12343B;--bg:#FFFCF7;--line:#EFE6D8;--muted:#7A7068;--soft:#FFF4E6;--red:#C1121F;}
+*{box-sizing:border-box;}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Heiti TC",sans-serif;}
+header.top{display:flex;align-items:center;gap:14px;padding:14px 22px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;}
+header.top .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#C1121F,#F48FB1);display:grid;place-items:center;color:#fff;font-weight:900;font-size:22px;flex:none;}
+header.top h1{font-size:20px;margin:0;}
+header.top p{margin:2px 0 0;font-size:13px;color:var(--muted);}
+header.top .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:10px;padding:10px 16px;font-size:15px;font-weight:700;transition:.15s;}
+button.primary{background:var(--orange);color:#fff;}button.primary:hover{background:#d04a26;}
+button.teal{background:var(--teal);color:#fff;}button.teal:hover{background:#026f7c;}
+button.ghost{background:var(--soft);color:var(--ink);border:1px solid #F3DFC2;}button.ghost:hover{background:#FFEBD1;}
+button.sm{padding:7px 10px;font-size:13px;}
+button:disabled{opacity:.5;cursor:wait;}
+main{display:grid;grid-template-columns:350px 1fr;min-height:calc(100vh - 77px);}
+aside{background:#fff;border-right:1px solid var(--line);padding:18px 18px 40px;overflow:auto;}
+section.preview{padding:22px;overflow:auto;}
+.group{margin-bottom:18px;padding-bottom:14px;border-bottom:1px dashed var(--line);}
+.group h3{margin:0 0 10px;font-size:14px;color:var(--teal);letter-spacing:.5px;display:flex;align-items:center;gap:6px;}
+.group h3 .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--teal);color:#fff;font-size:12px;}
+label.row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;margin:8px 0;}
+label.row span.k{font-weight:600;}
+select,input[type=text],input[type=number]{font-family:inherit;font-size:14px;padding:7px 9px;border:1px solid #E2D7C5;border-radius:8px;background:#fff;color:var(--ink);min-width:0;}
+input[type=text]{width:100%;}
+input[type=range]{width:100%;accent-color:var(--orange);}
+.seg{display:flex;background:var(--soft);border-radius:10px;padding:3px;gap:3px;}
+.seg button{flex:1;background:transparent;color:var(--muted);padding:7px 4px;font-size:13px;border-radius:8px;}
+.seg button.on{background:#fff;color:var(--orange);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.hint{font-size:12px;color:var(--muted);margin:4px 0 0;line-height:1.5;}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;margin:6px 0;}
+.check input{accent-color:var(--orange);width:17px;height:17px;}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;}
+.tpl-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+.tbtn{border:2px solid var(--line);background:#fff;border-radius:10px;padding:6px 2px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;}
+.tbtn svg{width:34px;height:34px;}
+.tbtn.active{border-color:var(--orange);background:var(--soft);}
+.pal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.pbtn{border:2px solid var(--line);background:#fff;border-radius:10px;padding:4px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;}
+.pbtn .sw{width:100%;height:30px;border-radius:7px;overflow:hidden;}
+.pbtn .sw svg{width:100%;height:100%;display:block;}
+.pbtn.active{border-color:var(--orange);background:var(--soft);}
+.pages{display:flex;flex-wrap:wrap;gap:22px;justify-content:center;}
+.page{width:210mm;height:297mm;background:#fff;box-shadow:0 6px 24px rgba(40,30,10,.12);transform-origin:top left;}
+.page svg{width:100%;height:100%;display:block;}
+.pagewrap{position:relative;}
+.pagewrap .tag{position:absolute;top:-10px;left:8px;background:var(--teal);color:#fff;font-size:12px;padding:3px 10px;border-radius:999px;z-index:2;}
+.scalebar{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin-bottom:14px;flex-wrap:wrap;}
+.scalebar input{width:160px;}
+footer.site{padding:18px;text-align:center;font-size:12px;color:var(--muted);}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:.3s;z-index:50;}
+.toast.show{opacity:1;}
+.mobile-toggle{display:none;}
+/* 介紹區 */
+.intro{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin:0 auto 22px;max-width:1100px;box-shadow:0 4px 18px rgba(40,30,10,.06);}
+.intro-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.intro-head h2{margin:0;font-size:24px;}
+.intro-head h2 span{color:var(--red);}
+.intro-head .tag2{background:#FDE8EC;color:var(--red);font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;}
+.intro-head button{margin-left:auto;}
+.intro-lead{font-size:16px;line-height:1.8;margin:12px 0 16px;color:#2c4a52;}
+.swatches{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 16px;}
+.swatch{border-radius:14px;overflow:hidden;border:1px solid var(--line);}
+.swatch svg{display:block;width:100%;height:auto;}
+.swatch span{display:block;text-align:center;font-size:13px;font-weight:700;padding:6px;background:var(--bg);}
+.intro-grid{display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:16px;}
+.icard{border-radius:14px;padding:16px 16px 14px;background:var(--bg);border:1px solid var(--line);}
+.icard h4{margin:0 0 8px;font-size:17px;display:flex;align-items:center;gap:8px;}
+.icard h4 i{font-style:normal;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;color:#fff;font-size:14px;}
+.icard p{margin:0 0 8px;font-size:14.5px;line-height:1.75;}
+.icard ul{margin:4px 0 0;padding-left:18px;font-size:14.5px;line-height:1.75;}
+.icard li{margin-bottom:4px;}
+.mean{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:14.5px;line-height:1.6;}
+.mean b{color:var(--red);}
+.steps{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+.step{flex:1 1 200px;background:var(--soft);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.6;}
+.step b{display:block;color:var(--orange);font-size:15px;margin-bottom:2px;}
+.intro.mini .intro-body{display:none;}
+@media (max-width:1100px){.intro-grid{grid-template-columns:1fr 1fr;}.intro-grid .icard:last-child{grid-column:1 / -1;}}
+@media (max-width:900px){
+  main{grid-template-columns:1fr;}
+  aside{border-right:none;border-bottom:1px solid var(--line);}
+  header.top h1{font-size:17px;}header.top p{display:none;}
+  header.top .actions button{padding:8px 10px;font-size:13px;}
+  .mobile-toggle{display:block;width:100%;margin-bottom:6px;}
+  aside.collapsed .panel{display:none;}
+}
+@media (max-width:700px){.intro{padding:16px;}.intro-head h2{font-size:20px;}.intro-grid{grid-template-columns:1fr;}.intro-lead{font-size:15px;}.swatches{grid-template-columns:1fr 1fr 1fr;gap:6px;}}
+@media print{
+  @page{size:A4 portrait;margin:0;}
+  body{background:#fff;}
+  header.top,aside,.scalebar,footer.site,.toast,.pagewrap .tag,.intro{display:none !important;}
+  main{display:block;min-height:0;}
+  section.preview{padding:0;overflow:visible;}
+  .pages{display:block;}
+  .pagewrap{margin:0;width:auto !important;height:auto !important;}
+  .page{box-shadow:none;transform:none !important;margin:0;page-break-after:always;break-after:page;width:210mm;height:297mm;}
+  .pagewrap:last-child .page{page-break-after:auto;break-after:auto;}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">花</div>
+  <div>
+    <h1>大花布紙本生成器</h1>
+    <p>大紅大綠、牡丹盛開：印出來上色、剪貼，做成扇子、書籤、紅包袋、杯墊</p>
+  </div>
+  <div class="actions">
+    <button class="ghost" onclick="regen(true)">🔀 換一組花樣</button>
+    <button class="ghost" onclick="showIntro()">❓ 這是什麼</button>
+    <button class="teal" id="pptBtn" onclick="downloadPPT()">下載 PPT</button>
+    <button class="teal" id="pdfBtn" onclick="downloadPDF()">下載 PDF</button>
+    <button class="ghost" onclick="downloadSVG()">SVG</button>
+    <button class="primary" onclick="window.print()">列印</button>
+  </div>
+</header>
+
+<main>
+<aside id="aside">
+  <button class="ghost mobile-toggle" onclick="document.getElementById('aside').classList.toggle('collapsed')">⚙ 設定：版型、配色、花樣、文字（點我展開／收起）</button>
+  <div class="panel">
+
+  <div class="group">
+    <h3><span class="n">1</span>做成什麼</h3>
+    <div class="tpl-grid" id="tplGrid"></div>
+    <p class="hint" id="tplHint"></p>
+  </div>
+
+  <div class="group">
+    <h3><span class="n">2</span>呈現方式</h3>
+    <div class="seg" id="modeSeg">
+      <button data-v="color" class="on">彩色花布</button><button data-v="tint">淡彩描線</button><button data-v="line">線稿上色</button>
+    </div>
+    <p class="hint">彩色＝直接剪貼使用；淡彩描線＝淡淡的顏色當提示，再自己塗深；線稿＝白底黑線，完全自己上色。</p>
+    <label class="row" id="lwRow"><span class="k">線條粗細</span><span id="lwv">中</span></label>
+    <input type="range" id="lw" min="1" max="4" value="2">
+  </div>
+
+  <div class="group">
+    <h3><span class="n">3</span>配色</h3>
+    <div class="pal-grid" id="palGrid"></div>
+  </div>
+
+  <div class="group">
+    <h3><span class="n">4</span>花樣</h3>
+    <div class="checks">
+      <label class="check"><input type="checkbox" id="fPeony" checked>牡丹（大花）</label>
+      <label class="check"><input type="checkbox" id="fPlum" checked>梅花</label>
+      <label class="check"><input type="checkbox" id="fChry">菊花</label>
+      <label class="check"><input type="checkbox" id="fSmall" checked>小碎花</label>
+      <label class="check"><input type="checkbox" id="fLeaf" checked>綠葉</label>
+      <label class="check"><input type="checkbox" id="fDot" checked>底紋圓點</label>
+    </div>
+    <label class="row"><span class="k">花朵大小</span><span id="sizeV">大</span></label>
+    <input type="range" id="fsize" min="1" max="5" value="4">
+    <label class="row"><span class="k">花朵密度</span></label>
+    <div class="seg" id="denSeg"><button data-v="0.8">疏</button><button data-v="1" class="on">中</button><button data-v="1.25">密</button></div>
+    <p class="hint">給長輩上色時建議「花朵大、密度疏」，每一塊面積大比較好塗。</p>
+    <label class="check"><input type="checkbox" id="vary" checked>每一片（扇面、書籤、杯墊）花樣都不同</label>
+  </div>
+
+  <div class="group">
+    <h3><span class="n">5</span>頁面文字</h3>
+    <label class="row"><span class="k">標題</span></label>
+    <input type="text" id="title" value="大花布" maxlength="20">
+    <label class="row"><span class="k">說明文字</span></label>
+    <input type="text" id="subtitle" value="" maxlength="60" placeholder="留空會依版型自動顯示做法">
+    <label class="check"><input type="checkbox" id="nameLine" checked>顯示 姓名／日期 欄</label>
+    <label class="row"><span class="k">落款（頁尾）</span></label>
+    <input type="text" id="footer" value="愛迪樂健康促進團隊" maxlength="40">
+    <label class="row"><span class="k">產生張數</span><input type="number" id="count" min="1" max="20" value="1" style="width:80px"></label>
+  </div>
+
+  <div class="group">
+    <h3><span class="n">6</span>輸出說明</h3>
+    <p class="hint">「列印」直接出 A4；「下載 PDF」存檔分享；「下載 PPT」文字可編輯、花布圖可移動縮放；「SVG」可進 Canva、Illustrator 再設計。按「換一組花樣」會重新排列所有花朵。</p>
+  </div>
+  </div>
+</aside>
+
+<section class="preview">
+  <div class="intro" id="intro">
+    <div class="intro-head">
+      <h2>什麼是<span>大花布</span>？</h2>
+      <span class="tag2">很多人叫它「客家花布」</span>
+      <button class="ghost sm" id="introToggle" onclick="toggleIntro()">收起介紹</button>
+    </div>
+    <div class="intro-body">
+      <p class="intro-lead">大紅、桃紅、翠綠的底色上，開滿一朵朵碩大的牡丹，旁邊襯著綠葉和小碎花——這就是許多人記憶裡的「大花布」。早年台灣家庭常用它做棉被套、枕頭套、門簾和包袱巾，也是嫁妝裡常見的布料。近年它常出現在客家文化活動和文創商品上，所以很多人叫它「客家花布」；其實在不同族群的家庭裡，都找得到這塊布的回憶。</p>
+      <div class="swatches" id="swatches"></div>
+      <div class="intro-grid">
+        <div class="icard">
+          <h4><i style="background:var(--red)">1</i>花布上的花在說什麼？</h4>
+          <div class="mean">
+            <b>牡丹</b><span>花中之王，象徵富貴、圓滿，是大花布的主角。</span>
+            <b>梅花</b><span>寒冬裡開花，象徵堅毅，也代表新春到來。</span>
+            <b>菊花</b><span>秋天盛開，常用來祝福長壽、平安。</span>
+            <b>大紅</b><span>喜氣、熱鬧，所以常用在結婚、過年的物品上。</span>
+          </div>
+        </div>
+        <div class="icard">
+          <h4><i style="background:var(--teal)">2</i>大花布的樣子</h4>
+          <ul>
+            <li><b>花大、色豔</b>：主花常比手掌還大，配色對比強烈，遠遠就看得到。</li>
+            <li><b>滿版不留白</b>：花、葉、碎花排得滿滿的，看起來熱鬧又豐盛。</li>
+            <li><b>一再重複</b>：整匹布由同樣的花樣重複排列，剪哪一塊都好看。</li>
+          </ul>
+          <p style="margin-top:8px">這個生成器每次都會重新排列花朵，所以印出來的每一張都是不一樣的花布。</p>
+        </div>
+        <div class="icard">
+          <h4><i style="background:var(--amber);color:var(--ink)">3</i>為什麼做這個生成器？</h4>
+          <p>大花布是許多長輩熟悉的生活記憶，一拿出來就能聊起「以前家裡的棉被」「出嫁時的嫁妝」。可是要自己畫出一整片花布並不容易。</p>
+          <p>所以我把花布做成可以印的紙本：</p>
+          <ul>
+            <li><b>線稿版、淡彩版</b>：花瓣分區清楚，可以慢慢上色</li>
+            <li><b>彩色版</b>：直接剪下來貼，手部力氣較弱的人也能完成作品</li>
+            <li><b>五種版型</b>：滿版、扇面、書籤、紅包袋、杯墊，作品可以帶回家用或送人</li>
+          </ul>
+        </div>
+      </div>
+      <div class="steps">
+        <div class="step"><b>帶活動小提示 ①</b>先拿出（或投影）彩色版，問大家：「這塊布，你以前在哪裡看過？」</div>
+        <div class="step"><b>帶活動小提示 ②</b>依每個人的狀況發線稿、淡彩或彩色版，同一桌可以有人塗色、有人剪貼。</div>
+        <div class="step"><b>帶活動小提示 ③</b>完成後一起欣賞：誰的配色最喜氣？作品要送給誰？</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scalebar">
+    <span>預覽縮放</span><input type="range" id="zoom" min="25" max="100" value="60"><span id="zoomVal">60%</span>
+    <span style="margin-left:auto" id="pageInfo"></span>
+  </div>
+  <div class="pages" id="pages"></div>
+</section>
+</main>
+<footer class="site">大花布紙本生成器 · 自由列印使用於社區、教室、居家活動</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- 工具 ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+const $=id=>document.getElementById(id);
+const F=n=>(+n).toFixed(2);
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+function tint(hex,a){const n=parseInt(hex.slice(1),16);const r=(n>>16)&255,g=(n>>8)&255,b=n&255;const m=v=>Math.round(255+(v-255)*a).toString(16).padStart(2,'0');return '#'+m(r)+m(g)+m(b);}
+
+/* ---------- 配色 ---------- */
+const RED={l:'#FFCDD2',m:'#E53935',d:'#9E0B0F'},PINK={l:'#FFE0EA',m:'#F48FB1',d:'#C2185B'},WHITE={l:'#FFFFFF',m:'#FCE4EC',d:'#F06292'},
+      YEL={l:'#FFF6C7',m:'#F9D648',d:'#D99A00'},BLUE={l:'#E3F2FD',m:'#64B5F6',d:'#1565C0'},PURP={l:'#F3E5F5',m:'#BA68C8',d:'#7B1FA2'},ORG={l:'#FFE0B2',m:'#FF9800',d:'#E65100'};
+const PALS=[
+ {id:'red',name:'經典大紅',bg:'#C1121F',dot:'#F9D648',flowers:[PINK,WHITE,YEL],leaf:{l:'#8BD17C',d:'#1F7A3A'}},
+ {id:'peach',name:'桃紅',bg:'#E0457B',flowers:[RED,WHITE,YEL],dot:'#FFF1A8',leaf:{l:'#A5DE8F',d:'#2E7D32'}},
+ {id:'green',name:'翠綠',bg:'#13804D',flowers:[RED,PINK,YEL],dot:'#F9D648',leaf:{l:'#C8EBB0',d:'#6AAF3D'}},
+ {id:'blue',name:'寶藍',bg:'#1F4E9C',flowers:[RED,PINK,WHITE],dot:'#F9D648',leaf:{l:'#9BDB8A',d:'#2E7D32'}},
+ {id:'yellow',name:'鵝黃',bg:'#F5C518',flowers:[RED,PINK,WHITE],dot:'#FFFFFF',leaf:{l:'#7CC576',d:'#1F6B35'}},
+ {id:'purple',name:'紫紅',bg:'#8E1B5A',flowers:[PINK,YEL,WHITE],dot:'#F9D648',leaf:{l:'#9BDB8A',d:'#2E7D32'}},
+ {id:'cream',name:'米白',bg:'#FFF6E5',flowers:[RED,BLUE,ORG],dot:'#E8A0A8',leaf:{l:'#8BD17C',d:'#2E7D32'}},
+ {id:'black',name:'墨黑',bg:'#22252B',flowers:[RED,PINK,YEL],dot:'#E53935',leaf:{l:'#8BD17C',d:'#2E7D32'}},
+];
+
+/* ---------- 花朵造型（單位：半徑 1） ---------- */
+const petalD=(L,W)=>`M0 0C${F(-W*.6)} ${F(-L*.3)} ${F(-W*.62)} ${F(-L*.78)} ${F(-W*.36)} ${F(-L*.94)}Q${F(-W*.18)} ${F(-L*1.06)} 0 ${F(-L*.96)}Q${F(W*.18)} ${F(-L*1.06)} ${F(W*.36)} ${F(-L*.94)}C${F(W*.62)} ${F(-L*.78)} ${F(W*.6)} ${F(-L*.3)} 0 0Z`;
+const thinD=(L,W)=>`M0 0Q${F(-W)} ${F(-L*.55)} 0 ${F(-L)}Q${F(W)} ${F(-L*.55)} 0 0Z`;
+
+function style(o,fill,stroke,R){ // 回傳 fill/stroke 屬性
+  if(o.mode==='line')return `fill="#fff" stroke="#2b2b2b" stroke-width="${F(o.lw/R)}"`;
+  if(o.mode==='tint')return `fill="${tint(fill,.28)}" stroke="#3a3a3a" stroke-width="${F(o.lw/R)}"`;
+  return `fill="${fill}" stroke="${stroke}" stroke-width="${F(.28/R)}"`;
+}
+function hl(o,R,d){return o.mode==='color'?`<path d="${d}" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="${F(.35/R)}" stroke-linecap="round"/>`:'';}
+
+function peony(cx,cy,R,rot,cs,o,rng){
+  const rings=[{n:9,L:1,W:.64,c:cs.l,s:cs.m},{n:8,L:.8,W:.6,c:cs.m,s:cs.d},{n:6,L:.56,W:.56,c:cs.m,s:cs.d},{n:5,L:.35,W:.5,c:cs.d,s:cs.d}];
+  let g=`<g transform="translate(${F(cx)} ${F(cy)}) rotate(${F(rot)}) scale(${F(R)})">`;
+  rings.forEach((rg,k)=>{for(let i=0;i<rg.n;i++){const a=i*360/rg.n+k*19+(rng()-.5)*10;const L=rg.L*(.9+rng()*.18);
+    g+=`<g transform="rotate(${F(a)})"><path d="${petalD(L,rg.W*L)}" ${style(o,rg.c,rg.s,R)}/>${k<2?hl(o,R,`M0 ${F(-L*.3)}Q${F(L*.07)} ${F(-L*.6)} 0 ${F(-L*.84)}`):''}</g>`;}});
+  g+=`<circle r=".15" ${style(o,'#F6C543','#C98A00',R)}/>`;
+  if(o.mode!=='line')for(let i=0;i<7;i++){const a=i/7*Math.PI*2;g+=`<circle cx="${F(Math.cos(a)*.08)}" cy="${F(Math.sin(a)*.08)}" r=".025" fill="#B26A00"/>`;}
+  return g+'</g>';
+}
+function plum(cx,cy,R,rot,cs,o){
+  let g=`<g transform="translate(${F(cx)} ${F(cy)}) rotate(${F(rot)}) scale(${F(R)})">`;
+  for(let i=0;i<5;i++)g+=`<g transform="rotate(${i*72})"><circle cx="0" cy="-.5" r=".46" ${style(o,cs.l,cs.m,R)}/>${hl(o,R,'M0 -.22Q.05 -.55 0 -.8')}</g>`;
+  g+=`<circle r=".22" ${style(o,cs.m,cs.d,R)}/>`;
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2,x=Math.cos(a)*.36,y=Math.sin(a)*.36;g+=`<line x1="0" y1="0" x2="${F(x)}" y2="${F(y)}" stroke="${o.mode==='line'?'#2b2b2b':'#C98A00'}" stroke-width="${F((o.mode==='line'?o.lw*.7:.3)/R)}"/><circle cx="${F(x)}" cy="${F(y)}" r=".045" ${o.mode==='line'?'fill="#2b2b2b"':'fill="#F6C543"'}/>`;}
+  return g+'</g>';
+}
+function chry(cx,cy,R,rot,cs,o){
+  let g=`<g transform="translate(${F(cx)} ${F(cy)}) rotate(${F(rot)}) scale(${F(R)})">`;
+  [[18,1,.17,cs.l,cs.m],[14,.74,.18,cs.m,cs.d],[10,.46,.17,cs.d,cs.d]].forEach(([n,L,W,c,s],k)=>{for(let i=0;i<n;i++)g+=`<path transform="rotate(${F(i*360/n+k*9)})" d="${thinD(L,W)}" ${style(o,c,s,R)}/>`;});
+  g+=`<circle r=".13" ${style(o,'#F6C543','#C98A00',R)}/>`;
+  return g+'</g>';
+}
+function small(cx,cy,R,rot,cs,o){
+  let g=`<g transform="translate(${F(cx)} ${F(cy)}) rotate(${F(rot)}) scale(${F(R)})">`;
+  for(let i=0;i<5;i++)g+=`<circle transform="rotate(${i*72})" cx="0" cy="-.45" r=".4" ${style(o,cs.l,cs.m,R)}/>`;
+  return g+`<circle r=".24" ${style(o,'#F6C543','#C98A00',R)}/></g>`;
+}
+function leaf(x,y,L,ang,lc,o){
+  let g=`<g transform="translate(${F(x)} ${F(y)}) rotate(${F(ang)}) scale(${F(L)})">`;
+  g+=`<path d="M0 0Q.5 -.42 1 0Q.5 .42 0 0Z" ${style(o,lc.d,lc.d,L)}/>`;
+  if(o.mode==='color')g+=`<path d="M0 0Q.5 -.42 1 0Q.5 -.03 0 0Z" fill="${lc.l}"/>`;
+  g+=`<path d="M.04 0Q.5 -.03 .93 0" fill="none" stroke="${o.mode==='color'?'#fff':'#2b2b2b'}" stroke-opacity="${o.mode==='color'?.7:1}" stroke-width="${F((o.mode==='color'?.3:o.lw*.6)/L)}"/>`;
+  return g+'</g>';
+}
+
+/* ---------- 花布產生（在指定矩形範圍內） ---------- */
+function fabric(bx,by,bw,bh,seed,o){
+  const rng=mulberry32(seed);const pal=o.pal;const R0=o.R;
+  const types=[];if(o.peony)types.push('peony','peony');if(o.plum)types.push('plum');if(o.chry)types.push('chry');
+  const s=R0*2.55/o.den;const rowH=s*.86;
+  const bigs=[];
+  if(types.length){let row=0;for(let y=by-R0;y<by+bh+R0;y+=rowH,row++){for(let x=bx-R0+(row%2?s/2:0);x<bx+bw+R0;x+=s){
+    const t=types[Math.floor(rng()*types.length)];const sc=t==='peony'?1:t==='plum'?.72:.85;
+    bigs.push({x:x+(rng()-.5)*s*.32,y:y+(rng()-.5)*rowH*.32,r:R0*sc*(.85+rng()*.3),t,rot:rng()*360,cs:pal.flowers[Math.floor(rng()*pal.flowers.length)]});}}}
+  let leaves='',smalls='',flowers='';
+  if(o.leaf)bigs.forEach(b=>{const k=2+Math.floor(rng()*3);const a0=rng()*360;for(let i=0;i<k;i++){const a=a0+i*360/k+(rng()-.5)*30;const rad=a*Math.PI/180;const L=b.r*(.95+rng()*.35);
+    leaves+=leaf(b.x+Math.cos(rad)*b.r*.55,b.y+Math.sin(rad)*b.r*.55,L,a,pal.leaf,o);}});
+  if(o.small){const rs=R0*.24;const tries=Math.round(bw*bh/(s*s)*14)+20;const pts=[];
+    for(let i=0;i<tries;i++){const x=bx-rs+rng()*(bw+2*rs),y=by-rs+rng()*(bh+2*rs);
+      if(bigs.some(b=>Math.hypot(b.x-x,b.y-y)<b.r*(o.leaf?1.55:1.05)+rs))continue;if(pts.some(p=>Math.hypot(p.x-x,p.y-y)<rs*2.6))continue;
+      pts.push({x,y});smalls+=small(x,y,rs*(.8+rng()*.4),rng()*72,pal.flowers[Math.floor(rng()*pal.flowers.length)],o);}}
+  bigs.forEach(b=>{flowers+=b.t==='peony'?peony(b.x,b.y,b.r,b.rot,b.cs,o,rng):b.t==='plum'?plum(b.x,b.y,b.r,b.rot,b.cs,o):chry(b.x,b.y,b.r,b.rot,b.cs,o);});
+  let bg='';
+  if(o.mode==='color'){bg=`<rect x="${F(bx-1)}" y="${F(by-1)}" width="${F(bw+2)}" height="${F(bh+2)}" fill="${pal.bg}"/>`;
+    if(o.dot){const pid='dp'+seed;bg+=`<pattern id="${pid}" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r=".55" fill="${pal.dot}" opacity=".55"/><circle cx="4.5" cy="4.5" r=".55" fill="${pal.dot}" opacity=".55"/></pattern><rect x="${F(bx-1)}" y="${F(by-1)}" width="${F(bw+2)}" height="${F(bh+2)}" fill="url(#${pid})"/>`;}}
+  else if(o.mode==='tint'){bg=`<rect x="${F(bx-1)}" y="${F(by-1)}" width="${F(bw+2)}" height="${F(bh+2)}" fill="${tint(pal.bg,.12)}"/>`;}
+  else bg=`<rect x="${F(bx-1)}" y="${F(by-1)}" width="${F(bw+2)}" height="${F(bh+2)}" fill="#fff"/>`;
+  return bg+leaves+smalls+flowers;
+}
+
+/* ---------- 版型 ---------- */
+const sector=(cx,cy,R1,R2,a1,a2)=>{const p=(r,a)=>[cx+r*Math.sin(a*Math.PI/180),cy-r*Math.cos(a*Math.PI/180)];const A=p(R2,a1),B=p(R2,a2),C=p(R1,a2),D=p(R1,a1);
+  return `M${F(A[0])} ${F(A[1])}A${R2} ${R2} 0 0 1 ${F(B[0])} ${F(B[1])}L${F(C[0])} ${F(C[1])}A${R1} ${R1} 0 0 0 ${F(D[0])} ${F(D[1])}Z`;};
+const rrect=(x,y,w,h,r)=>`M${x+r} ${y}H${x+w-r}Q${x+w} ${y} ${x+w} ${y+r}V${y+h-r}Q${x+w} ${y+h} ${x+w-r} ${y+h}H${x+r}Q${x} ${y+h} ${x} ${y+h-r}V${y+r}Q${x} ${y} ${x+r} ${y}Z`;
+const circ=(cx,cy,r)=>`M${cx-r} ${cy}A${r} ${r} 0 1 0 ${cx+r} ${cy}A${r} ${r} 0 1 0 ${cx-r} ${cy}Z`;
+const FONT=`font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif"`;
+const TPLS={
+ full:{name:'滿版',sub:'整張花布：上色後可以裱框，或剪成任何你想要的形狀。',
+   icon:'<rect x="6" y="4" width="24" height="28" rx="2"/>',
+   regions:()=>[{d:rrect(15,46,180,232,4),box:[15,46,180,232]}]},
+ fan:{name:'扇面',sub:'沿外框剪下，貼在團扇或厚卡紙上，或沿虛線來回摺成摺扇。',
+   icon:'<path d="M6 26A16 16 0 0 1 30 26L22 30A8 8 0 0 0 14 30Z"/>',
+   regions:()=>[0,1].map(i=>{const cy=148+i*104,R2=100,R1=26;const d=sector(105,cy,R1,R2,-74,74);
+     let ribs='';for(let a=-74+148/12;a<74;a+=148/12){const s=Math.sin(a*Math.PI/180),c=Math.cos(a*Math.PI/180);ribs+=`<line x1="${F(105+R1*s)}" y1="${F(cy-R1*c)}" x2="${F(105+R2*s)}" y2="${F(cy-R2*c)}" stroke="#8a8a8a" stroke-width=".3" stroke-dasharray="1.6 1.4" opacity=".8"/>`;}
+     return {d,box:[105-R2,cy-R2,2*R2,R2],extra:ribs};})},
+ bookmark:{name:'書籤',sub:'沿外框剪下，在小圓圈打洞、綁上緞帶，就是一張書籤。',
+   icon:'<rect x="9" y="3" width="8" height="30" rx="2"/><rect x="20" y="3" width="8" height="30" rx="2"/>',
+   regions:()=>[0,1,2,3].map(i=>{const x=14+i*48,y=52,w=38,h=190;return {d:rrect(x,y,w,h,4),box:[x,y,w,h],extra:`<circle cx="${x+w/2}" cy="${y+10}" r="3" fill="#fff" stroke="#555" stroke-width=".4"/>`};})},
+ hongbao:{name:'紅包袋',sub:'沿實線剪下，沿虛線往內摺，在「黏」的地方塗膠黏好，就是一個紅包袋。',
+   icon:'<rect x="11" y="8" width="14" height="20"/><path d="M11 8L13 3H23L25 8M11 28L13 33H23L25 28M11 9L5 10V27L11 27M25 9L31 10V27L25 27"/>',
+   regions:()=>{const d='M60 78L66 52Q67 48 71 48L139 48Q143 48 144 52L150 78Z M60 78H150V228H60Z M60 80L18 86Q13 87 13 92V214Q13 219 18 220L60 226Z M150 80L192 86Q197 87 197 92V214Q197 219 192 220L150 226Z M60 228H150L146 265Q145 268 141 268H69Q65 268 64 265Z';
+     const fold=`<path d="M60 78H150M60 228H150M60 78V228M150 78V228" fill="none" stroke="#555" stroke-width=".45" stroke-dasharray="2 1.5"/>`;
+     const lab=(x,y,t)=>`<rect x="${x-9}" y="${y-5}" width="18" height="8" rx="2" fill="#fff" opacity=".9"/><text x="${x}" y="${y+.8}" text-anchor="middle" font-size="4.6" font-weight="700" fill="#555" ${FONT}>${t}</text>`;
+     return [{d,box:[13,48,184,220],extra:fold+lab(36,153,'黏')+lab(105,250,'黏')}];}},
+ coaster:{name:'杯墊',sub:'沿圓形剪下，貼在厚紙板或軟木片上，表面再貼一層透明膠膜就能使用。',
+   icon:'<circle cx="11" cy="11" r="7"/><circle cx="25" cy="11" r="7"/><circle cx="11" cy="25" r="7"/><circle cx="25" cy="25" r="7"/>',
+   regions:()=>{const a=[];for(let r=0;r<3;r++)for(let c=0;c<2;c++){const cx=62+c*86,cy=86+r*76;a.push({d:circ(cx,cy,35),box:[cx-35,cy-35,70,70]});}return a;}},
+};
+
+/* ---------- 狀態 ---------- */
+const state={tpl:'full',mode:'color',pal:0,den:1,seed:Date.now()%100000};
+const pagesData=[];
+function cfg(){return{lw:[0,.3,.45,.6,.8][+$('lw').value],R:[0,9,12,15,19,24][+$('fsize').value],peony:$('fPeony').checked,plum:$('fPlum').checked,chry:$('fChry').checked,small:$('fSmall').checked,leaf:$('fLeaf').checked,dot:$('fDot').checked,
+  vary:$('vary').checked,title:$('title').value||'大花布',subtitle:$('subtitle').value.trim()||TPLS[state.tpl].sub,nameLine:$('nameLine').checked,footer:$('footer').value,count:Math.min(20,Math.max(1,+$('count').value||1)),mode:state.mode,pal:PALS[state.pal],den:state.den};}
+
+function artSvg(c,pageSeed){
+  const regs=TPLS[state.tpl].regions();let defs='',body='',outl='';
+  regs.forEach((r,i)=>{const id=`cp${pageSeed}_${i}`;defs+=`<clipPath id="${id}"><path d="${r.d}"/></clipPath>`;
+    const [x,y,w,h]=r.box;body+=`<g clip-path="url(#${id})">${fabric(x,y,w,h,c.vary?pageSeed*31+i*977:pageSeed*31,c)}</g>`;
+    outl+=`<path d="${r.d}" fill="none" stroke="${c.mode==='color'?'#6b6b6b':'#333'}" stroke-width=".45"/>`+(r.extra||'');});
+  return `<defs>${defs}</defs>${body}${outl}`;
+}
+function pageSvg(c,idx,total,art){
+  const W=210;
+  let head=`<text x="${W/2}" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#12343B" ${FONT}>${esc(c.title)}</text>`;
+  head+=`<text x="${W/2}" y="27.5" text-anchor="middle" font-size="4.2" fill="#7A7068" ${FONT}>${esc(c.subtitle)}</text>`;
+  if(c.nameLine){head+=`<text x="22" y="37" font-size="4.2" fill="#12343B" ${FONT}>姓名：</text><line x1="33" y1="38" x2="95" y2="38" stroke="#B9B0A3" stroke-width=".4"/><text x="118" y="37" font-size="4.2" fill="#12343B" ${FONT}>日期：</text><line x1="129" y1="38" x2="188" y2="38" stroke="#B9B0A3" stroke-width=".4"/>`;}
+  const foot=`<text x="${W/2}" y="289" text-anchor="middle" font-size="3.4" fill="#9A918A" ${FONT}>${esc(c.footer)}${total>1?`　·　第 ${idx} 張 / 共 ${total} 張`:''}</text><line x1="22" y1="283" x2="188" y2="283" stroke="#EFE6D8" stroke-width=".4"/>`;
+  const corner=`<path d="M12 22 V12 H22 M188 12 H198 V22 M198 275 V285 H188 M22 285 H12 V275" fill="none" stroke="#F4A93C" stroke-width=".8" stroke-linecap="round"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm"><rect width="210" height="297" fill="#fff"/>${corner}${head}${art}${foot}</svg>`;
+}
+function regen(newSeed){
+  if(newSeed)state.seed=Math.floor(Math.random()*1e6);
+  const c=cfg();pagesData.length=0;
+  for(let i=0;i<c.count;i++){const art=artSvg(c,state.seed+i*101);pagesData.push({svg:pageSvg(c,i+1,c.count,art),art,idx:i+1});}
+  const box=$('pages');box.innerHTML='';
+  pagesData.forEach(p=>{const w=document.createElement('div');w.className='pagewrap';w.innerHTML=`<span class="tag">第 ${p.idx} 張</span><div class="page">${p.svg}</div>`;box.appendChild(w);});
+  $('pageInfo').textContent=`共 ${pagesData.length} 頁`;$('tplHint').textContent=TPLS[state.tpl].sub;
+  $('lwRow').style.opacity=state.mode==='color'?.4:1;
+  applyZoom();
+}
+function applyZoom(){const z=+$('zoom').value/100;$('zoomVal').textContent=Math.round(z*100)+'%';
+  document.querySelectorAll('.pagewrap').forEach(w=>{const p=w.querySelector('.page');p.style.transform=`scale(${z})`;w.style.width=(210*z*3.7795)+'px';w.style.height=(297*z*3.7795)+'px';});}
+
+/* ---------- 選單 ---------- */
+function swatchSvg(pal,mode,w,h,seed,R){const o={...cfg(),pal,mode,R:R||9,den:1,peony:true,plum:true,chry:false,small:true,leaf:true,dot:true};
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid slice"><defs><clipPath id="sw${seed}"><rect width="${w}" height="${h}"/></clipPath></defs><g clip-path="url(#sw${seed})">${fabric(0,0,w,h,seed,o)}</g></svg>`;}
+function initMenus(){
+  const tg=$('tplGrid');Object.entries(TPLS).forEach(([k,t])=>{const b=document.createElement('button');b.className='tbtn'+(k===state.tpl?' active':'');b.dataset.k=k;
+    b.innerHTML=`<svg viewBox="0 0 36 36" fill="#FDE8EC" stroke="#C1121F" stroke-width="1.6" stroke-linejoin="round">${t.icon}</svg><span>${t.name}</span>`;
+    b.onclick=()=>{state.tpl=k;document.querySelectorAll('.tbtn').forEach(x=>x.classList.toggle('active',x.dataset.k===k));regen();};tg.appendChild(b);});
+  const pg=$('palGrid');PALS.forEach((p,i)=>{const b=document.createElement('button');b.className='pbtn'+(i===state.pal?' active':'');
+    b.innerHTML=`<div class="sw">${swatchSvg(p,'color',60,30,500+i,7)}</div><span>${p.name}</span>`;
+    b.onclick=()=>{state.pal=i;document.querySelectorAll('.pbtn').forEach((x,k)=>x.classList.toggle('active',k===i));regen();};pg.appendChild(b);});
+  $('swatches').innerHTML=[[0,'color','經典大紅'],[2,'color','翠綠'],[0,'line','線稿上色版']].map(([pi,m,n],i)=>`<div class="swatch">${swatchSvg(PALS[pi],m,120,70,900+i,11)}<span>${n}</span></div>`).join('');
+}
+
+/* ---------- 介紹區 ---------- */
+function setIntro(open){$('intro').classList.toggle('mini',!open);$('introToggle').textContent=open?'收起介紹':'展開介紹：什麼是大花布？';try{localStorage.setItem('floral-intro',open?'1':'0');}catch(e){}}
+function toggleIntro(){setIntro($('intro').classList.contains('mini'));}
+function showIntro(){setIntro(true);$('intro').scrollIntoView({behavior:'smooth',block:'start'});}
+
+/* ---------- 輸出 ---------- */
+function downloadSVG(){const p=pagesData[0];if(!p)return;const blob=new Blob([p.svg],{type:'image/svg+xml'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`大花布_${TPLS[state.tpl].name}.svg`;a.click();toast('已下載第 1 張 SVG');}
+function svgToCanvas(svg,wmm,hmm,scale){return new Promise((res,rej)=>{const img=new Image();const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));img.onload=()=>{const cv=document.createElement('canvas');cv.width=Math.round(wmm*scale);cv.height=Math.round(hmm*scale);const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(img,0,0,cv.width,cv.height);URL.revokeObjectURL(url);res(cv);};img.onerror=rej;img.src=url;});}
+async function downloadPDF(){const btn=$('pdfBtn');btn.disabled=true;btn.textContent='產生中…';
+  try{const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',compress:true});
+    for(let i=0;i<pagesData.length;i++){if(i)pdf.addPage();const cv=await svgToCanvas(pagesData[i].svg,210,297,8);pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',0,0,210,297);}
+    pdf.save(`大花布_${TPLS[state.tpl].name}_${pagesData.length}頁.pdf`);toast('PDF 已下載');}
+  catch(e){console.error(e);toast('PDF 產生失敗，請改用「列印」→ 另存為 PDF');}
+  btn.disabled=false;btn.textContent='下載 PDF';}
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('load fail'));document.head.appendChild(s);});}
+async function ensurePptx(){if(window.PptxGenJS)return;for(const u of ['https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js','https://unpkg.com/pptxgenjs@4.0.1/dist/pptxgen.bundle.js']){try{await loadScript(u);if(window.PptxGenJS)return;}catch(e){}}throw new Error('PptxGenJS 無法載入');}
+async function downloadPPT(){const btn=$('pptBtn');btn.disabled=true;btn.textContent='產生中…';
+  try{await ensurePptx();const c=cfg();const pptx=new PptxGenJS();pptx.defineLayout({name:'A4P',width:8.27,height:11.69});pptx.layout='A4P';
+    const IN=1/25.4,font='Microsoft JhengHei';const y0=42,h=240;
+    for(const p of pagesData){const s=pptx.addSlide();
+      const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 ${y0} 210 ${h}" width="210mm" height="${h}mm"><rect x="0" y="${y0}" width="210" height="${h}" fill="#fff"/>${p.art}</svg>`;
+      const cv=await svgToCanvas(svg,210,h,8);
+      s.addText(c.title,{x:0.6,y:0.35,w:7.07,h:0.6,align:'center',fontFace:font,fontSize:28,bold:true,color:'12343B'});
+      s.addText(c.subtitle,{x:0.6,y:0.95,w:7.07,h:0.35,align:'center',fontFace:font,fontSize:12,color:'7A7068'});
+      if(c.nameLine){s.addText('姓名：',{x:22*IN,y:1.3,w:0.7,h:0.3,fontFace:font,fontSize:12,color:'12343B'});s.addShape(pptx.ShapeType.line,{x:33*IN,y:1.58,w:62*IN,h:0,line:{color:'B9B0A3',width:0.75}});s.addText('日期：',{x:118*IN,y:1.3,w:0.7,h:0.3,fontFace:font,fontSize:12,color:'12343B'});s.addShape(pptx.ShapeType.line,{x:129*IN,y:1.58,w:59*IN,h:0,line:{color:'B9B0A3',width:0.75}});}
+      s.addImage({data:cv.toDataURL('image/png'),x:0,y:y0*IN,w:210*IN,h:h*IN});
+      s.addText(c.footer+(c.count>1?`　·　第 ${p.idx} 張 / 共 ${c.count} 張`:''),{x:0.6,y:284*IN,w:7.07,h:0.3,align:'center',fontFace:font,fontSize:9,color:'9A918A'});}
+    await pptx.writeFile({fileName:`大花布_${TPLS[state.tpl].name}_${pagesData.length}頁.pptx`});toast('PPT 已下載：文字可直接修改，花布圖可移動縮放');}
+  catch(e){console.error(e);toast('PPT 產生失敗，請確認網路連線後再試');}
+  btn.disabled=false;btn.textContent='下載 PPT';}
+
+/* ---------- 綁定 ---------- */
+initMenus();
+function seg(id,fn){document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x===b));fn(b.dataset.v);});}
+seg('modeSeg',v=>{state.mode=v;regen();});
+seg('denSeg',v=>{state.den=+v;regen();});
+['lw','fsize','fPeony','fPlum','fChry','fSmall','fLeaf','fDot','vary','title','subtitle','nameLine','footer','count'].forEach(id=>$(id).addEventListener('input',()=>{$('lwv').textContent=['','細','中','粗','極粗'][+$('lw').value];$('sizeV').textContent=['','很小','小','中','大','很大'][+$('fsize').value];regen();}));
+$('zoom').addEventListener('input',applyZoom);
+if(window.innerWidth<900){$('zoom').value=Math.min(60,Math.floor((window.innerWidth-50)/(210*3.7795)*100));$('aside').classList.add('collapsed');}
+try{if(localStorage.getItem('floral-intro')==='0')setIntro(false);}catch(e){}
+regen();
+</script>
+</body>
+</html>
